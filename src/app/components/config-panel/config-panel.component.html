@@ -1,0 +1,207 @@
+<form [formGroup]="form" (ngSubmit)="emit()" class="config-form">
+
+  <!-- ── Teams ─────────────────────────────────────────────── -->
+  <section class="section">
+    <h3 class="section-title">
+      <mat-icon>groups</mat-icon> {{ 'cfg.teams' | i18n }}
+    </h3>
+
+    <div formArrayName="teams" class="teams-list">
+      <div *ngFor="let team of teamsArray.controls; let i = index"
+           [formGroupName]="i" class="team-row">
+        <div class="color-dot" [style.background]="team.get('color')!.value"></div>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="team-name-field">
+          <mat-label>{{ 'cfg.team.name' | i18n }}</mat-label>
+          <input matInput formControlName="name" (change)="emit()" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="team-size-field">
+          <mat-label>{{ 'cfg.team.size' | i18n }}</mat-label>
+          <input matInput type="number" formControlName="size" min="1" (change)="emit()" />
+        </mat-form-field>
+        <input type="color" formControlName="color" class="color-picker" (change)="emit()" title="Team colour" />
+        <button mat-icon-button type="button" color="warn" (click)="removeTeam(i)"
+                [disabled]="teamsArray.length <= 1">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Add team row -->
+    <div class="add-team-row">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="team-name-field">
+        <mat-label>{{ 'cfg.team.new_name' | i18n }}</mat-label>
+        <input matInput [(ngModel)]="newTeamName" [ngModelOptions]="{standalone:true}"
+               (keyup.enter)="addTeam()" [placeholder]="'cfg.team.placeholder' | i18n" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="team-size-field">
+        <mat-label>{{ 'cfg.team.size' | i18n }}</mat-label>
+        <input matInput type="number" [(ngModel)]="newTeamSize" [ngModelOptions]="{standalone:true}" min="1" />
+      </mat-form-field>
+      <button mat-flat-button type="button" color="primary" (click)="addTeam()"
+              [disabled]="!newTeamName.trim()">
+        <mat-icon>add</mat-icon> {{ 'cfg.team.add' | i18n }}
+      </button>
+    </div>
+
+    <div class="team-summary">
+      <mat-chip-set>
+        <mat-chip highlighted color="primary">{{ teamsArray.length }} {{ 'cfg.team.count' | i18n }}</mat-chip>
+        <mat-chip highlighted color="accent">{{ totalPeople }} {{ 'cfg.team.people' | i18n }}</mat-chip>
+      </mat-chip-set>
+    </div>
+  </section>
+
+  <mat-divider></mat-divider>
+
+  <!-- ── Office Days ────────────────────────────────────────── -->
+  <section class="section">
+    <h3 class="section-title">
+      <mat-icon>event</mat-icon> {{ 'cfg.office_days' | i18n }}
+    </h3>
+    <div class="day-toggle-group">
+      <button *ngFor="let day of allDays" type="button"
+              class="day-btn" [class.selected]="isDaySelected(day)"
+              (click)="toggleDay(day)">
+        {{ i18n.dayShort(day) }}
+      </button>
+    </div>
+    <p class="field-hint warn-hint" *ngIf="selectedDays().length === 0">
+      {{ 'cfg.office_days.warn' | i18n }}
+    </p>
+  </section>
+
+  <mat-divider></mat-divider>
+
+  <!-- ── Attendance ──────────────────────────────────────────── -->
+  <section class="section">
+    <h3 class="section-title">
+      <mat-icon>today</mat-icon> {{ 'cfg.attendance' | i18n }}
+    </h3>
+    <div class="row-fields">
+      <div class="field-block">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full-field">
+          <mat-label>{{ 'cfg.attendance.dpw' | i18n }}</mat-label>
+          <input matInput type="number" formControlName="daysPerPersonPerWeek"
+                 min="1" max="5" (change)="emit()" />
+        </mat-form-field>
+        <p class="field-hint">{{ 'cfg.attendance.dpw_hint' | i18n }}</p>
+      </div>
+      <div class="field-block">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full-field">
+          <mat-label>{{ 'cfg.attendance.max' | i18n }}</mat-label>
+          <input matInput type="number" formControlName="maxPeoplePerDay"
+                 min="1" (change)="emit()" />
+        </mat-form-field>
+        <p class="field-hint">{{ 'cfg.attendance.max_hint' | i18n }}</p>
+      </div>
+    </div>
+  </section>
+
+  <mat-divider></mat-divider>
+
+  <!-- ── Meeting Constraints ────────────────────────────────── -->
+  <section class="section">
+    <h3 class="section-title">
+      <mat-icon>handshake</mat-icon> {{ 'cfg.meeting' | i18n }}
+    </h3>
+
+    <div class="field-block">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full-field">
+        <mat-label>{{ 'cfg.meeting.freq' | i18n }}</mat-label>
+        <mat-select formControlName="meetingFrequency" (selectionChange)="emit()">
+          <mat-option *ngFor="let f of frequencies" [value]="f.value">{{ i18n.freq(f.value) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <p class="field-hint">{{ currentFrequencyHint() }}</p>
+    </div>
+  </section>
+
+  <mat-divider></mat-divider>
+
+  <!-- ── Schedule Settings ──────────────────────────────────── -->
+  <section class="section">
+    <h3 class="section-title">
+      <mat-icon>date_range</mat-icon> {{ 'cfg.schedule' | i18n }}
+    </h3>
+    <div class="field-block">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full-field">
+        <mat-label>{{ 'cfg.schedule.num_weeks' | i18n }}</mat-label>
+        <input matInput type="number" formControlName="numWeeks" min="1" max="12" (change)="emit()" />
+      </mat-form-field>
+      <p class="field-hint">{{ 'cfg.schedule.num_weeks_hint' | i18n }}</p>
+    </div>
+  </section>
+
+  <mat-divider></mat-divider>
+
+  <!-- ── Fairness & Bad Shifts ──────────────────────────────── -->
+  <section class="section">
+    <h3 class="section-title">
+      <mat-icon>balance</mat-icon> {{ 'cfg.fairness' | i18n }}
+    </h3>
+
+    <!-- Bad pairs toggle chips -->
+    <p class="subsection-label">{{ 'cfg.fairness.bad_label' | i18n }}</p>
+    <div *ngIf="badShiftPairs.length === 0" class="no-pairs-hint">
+      {{ availablePairs.length === 0 ? ('cfg.fairness.no_pairs' | i18n) : ('cfg.fairness.all_forbidden' | i18n) }}
+    </div>
+    <div class="pair-grid" *ngIf="badShiftPairs.length > 0">
+      <button *ngFor="let pair of badShiftPairs"
+              type="button"
+              class="pair-chip"
+              [class.active]="isBadPair(pair)"
+              (click)="toggleBadPair(pair)">
+        <mat-icon class="pair-icon">{{ isBadPair(pair) ? 'warning_amber' : 'add' }}</mat-icon>
+        {{ pairLabel(pair) }}
+      </button>
+    </div>
+    <p class="field-hint" *ngIf="badShiftPairs.length > 0">
+      {{ 'cfg.fairness.bad_hint' | i18n }}
+    </p>
+
+    <!-- Forbidden pairs -->
+    <p class="subsection-label forbidden-label">
+      <mat-icon class="subsection-icon">block</mat-icon>
+      {{ 'cfg.fairness.forbidden_label' | i18n }}
+    </p>
+    <div *ngIf="availablePairs.length === 0" class="no-pairs-hint">
+      {{ 'cfg.fairness.forbidden_no_pairs' | i18n }}
+    </div>
+    <div class="pair-grid" *ngIf="availablePairs.length > 0">
+      <button *ngFor="let pair of availablePairs"
+              type="button"
+              class="pair-chip forbidden-chip"
+              [class.active]="isForbiddenPair(pair)"
+              (click)="toggleForbiddenPair(pair)">
+        <mat-icon class="pair-icon">{{ isForbiddenPair(pair) ? 'block' : 'add' }}</mat-icon>
+        {{ pairLabel(pair) }}
+      </button>
+    </div>
+    <p class="field-hint danger-hint" *ngIf="availablePairs.length > 0">
+      {{ 'cfg.fairness.forbidden_hint' | i18n }}
+    </p>
+
+    <div class="toggle-row">
+      <mat-slide-toggle formControlName="balanceBadShifts" (change)="emit()" color="primary">
+        {{ 'cfg.fairness.balance' | i18n }}
+      </mat-slide-toggle>
+    </div>
+  </section>
+
+  <mat-divider></mat-divider>
+
+  <!-- ── Actions ────────────────────────────────────────────── -->
+  <section class="section actions">
+    <button mat-flat-button type="button" color="primary"
+            class="save-btn"
+            [class.saved]="savedFlash"
+            (click)="saveConfig()">
+      <mat-icon>{{ savedFlash ? 'check' : 'save' }}</mat-icon>
+      {{ savedFlash ? ('cfg.saved' | i18n) : ('cfg.save' | i18n) }}
+    </button>
+    <button mat-stroked-button type="button" (click)="reset()">
+      <mat-icon>restart_alt</mat-icon> {{ 'cfg.reset' | i18n }}
+    </button>
+  </section>
+
+</form>

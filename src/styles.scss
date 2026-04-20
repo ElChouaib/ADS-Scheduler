@@ -1,0 +1,92 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$primary-palette: mat.define-palette(mat.$indigo-palette, 600);
+$accent-palette:  mat.define-palette(mat.$amber-palette,  700);
+$warn-palette:    mat.define-palette(mat.$red-palette,    600);
+
+$theme: mat.define-light-theme((
+  color: (
+    primary: $primary-palette,
+    accent:  $accent-palette,
+    warn:    $warn-palette,
+  ),
+  typography: mat.define-typography-config(),
+  density: -1,
+));
+
+@include mat.all-component-themes($theme);
+
+// ── Design tokens ────────────────────────────────────────────────
+:root {
+  --primary:       #3949ab;
+  --primary-light: #e8eaf6;
+  --accent:        #f57f17;
+  --warn:          #e53935;
+  --success:       #2e7d32;
+
+  --bg:            #f5f6fa;
+  --surface:       #ffffff;
+  --surface-2:     #f8f9fc;
+  --border:        #e2e5ed;
+
+  --text-primary:   #1a1d2e;
+  --text-secondary: #6b7280;
+}
+
+// ── Global reset ─────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+// ── Material overrides ───────────────────────────────────────────
+.mat-mdc-form-field {
+  font-size: 13px;
+}
+
+.mat-mdc-tab-group {
+  height: 100%;
+}
+
+.mat-mdc-tab-body-wrapper {
+  flex: 1;
+}
+
+.mat-mdc-table {
+  background: transparent;
+
+  .mat-mdc-header-cell {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+
+  .mat-mdc-cell {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .mat-mdc-row:hover .mat-mdc-cell {
+    background: var(--surface-2);
+  }
+}
+
+// ── Scrollbar ────────────────────────────────────────────────────
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #c0c4cc; }

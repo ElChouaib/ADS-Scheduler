@@ -1,0 +1,177 @@
+<div class="app-shell">
+
+  <!-- ── Top bar ──────────────────────────────────────────────── -->
+  <header class="top-bar">
+    <button mat-icon-button (click)="toggleSidebar()" class="menu-btn">
+      <mat-icon>{{ sidebarOpen ? 'menu_open' : 'menu' }}</mat-icon>
+    </button>
+    <div class="brand">
+      <img src="assets/logo.svg" class="brand-logo" alt="ADS logo" />
+      <span class="brand-name">ADS Shift Customizer</span>
+    </div>
+    <div class="top-bar-right">
+      <ng-container *ngIf="result">
+        <div class="status-pill"
+             [class.success]="result.status === 'SUCCESS'"
+             [class.impossible]="result.status === 'IMPOSSIBLE'">
+          <mat-icon>{{ result.status === 'SUCCESS' ? 'check_circle' : 'cancel' }}</mat-icon>
+          {{ result.status === 'SUCCESS' ? ('app.status.generated' | i18n) : ('app.status.impossible' | i18n) }}
+        </div>
+      </ng-container>
+      <mat-spinner *ngIf="loading" diameter="24"></mat-spinner>
+
+      <!-- Language switcher -->
+      <div class="lang-switcher">
+        <button *ngFor="let l of langs"
+                class="lang-btn"
+                [class.active]="i18n.lang === l"
+                (click)="setLang(l)"
+                type="button">
+          {{ l.toUpperCase() }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Body ─────────────────────────────────────────────────── -->
+  <div class="body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" [class.closed]="!sidebarOpen">
+      <div class="sidebar-header">
+        <mat-icon>tune</mat-icon>
+        <span>{{ 'sidebar.title' | i18n }}</span>
+      </div>
+      <div class="sidebar-scroll">
+        <app-config-panel
+          [loading]="loading"
+          (configChange)="onConfigChange($event)">
+        </app-config-panel>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+
+      <!-- Empty / loading state -->
+      <div *ngIf="!result && !loading" class="empty-state">
+        <mat-icon class="empty-icon">event_note</mat-icon>
+        <h2>{{ 'app.empty.title' | i18n }}</h2>
+        <p>{{ 'app.empty.desc' | i18n }}</p>
+      </div>
+
+      <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>{{ 'app.loading' | i18n }}</p>
+      </div>
+
+      <!-- IMPOSSIBLE result -->
+      <div *ngIf="result?.status === 'IMPOSSIBLE' && !loading" class="impossible-card">
+        <div class="impossible-icon">
+          <mat-icon>block</mat-icon>
+        </div>
+        <h2>{{ 'impossible.title' | i18n }}</h2>
+        <p class="impossible-reason">{{ result!.reason }}</p>
+        <mat-divider></mat-divider>
+        <div class="impossible-tips">
+          <h4>{{ 'impossible.suggestions' | i18n }}</h4>
+          <ul>
+            <li>{{ 'impossible.tip.max' | i18n }}</li>
+            <li>{{ 'impossible.tip.days' | i18n }}</li>
+            <li>{{ 'impossible.tip.dpw' | i18n }}</li>
+            <li>{{ 'impossible.tip.size' | i18n }}</li>
+            <li>{{ 'impossible.tip.freq' | i18n }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- SUCCESS result -->
+      <div *ngIf="result?.status === 'SUCCESS' && !loading" class="result-area">
+
+        <!-- Reroll bar -->
+        <div class="reroll-bar">
+          <span class="reroll-variant">
+            {{ 'reroll.combo' | i18n }} {{ variantIdx + 1 }} {{ 'reroll.of' | i18n }} {{ totalVariants }}
+          </span>
+          <button mat-stroked-button class="reroll-btn" (click)="reroll()" type="button"
+                  [disabled]="totalVariants <= 1"
+                  [matTooltip]="totalVariants <= 1 ? ('reroll.tip.disabled' | i18n) : ('reroll.tip.active' | i18n)">
+            <mat-icon>arrow_forward</mat-icon>
+            {{ 'reroll.btn' | i18n }}
+          </button>
+        </div>
+
+        <mat-tab-group [(selectedIndex)]="activeTab" class="result-tabs" animationDuration="150ms">
+
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">calendar_view_month</mat-icon>
+              {{ 'tab.calendar' | i18n }}
+            </ng-template>
+            <div class="tab-content">
+              <app-calendar-view
+                [calendar]="result!.calendar!"
+                [config]="lastConfig!">
+              </app-calendar-view>
+            </div>
+          </mat-tab>
+
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">groups</mat-icon>
+              {{ 'tab.teams' | i18n }}
+            </ng-template>
+            <div class="tab-content">
+              <app-team-view
+                [teamSchedule]="result!.team_schedule!"
+                [config]="lastConfig!"
+                [displayedColumns]="displayedColumns">
+              </app-team-view>
+            </div>
+          </mat-tab>
+
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">bar_chart</mat-icon>
+              {{ 'tab.metrics' | i18n }}
+            </ng-template>
+            <div class="tab-content">
+              <app-metrics-view
+                [metrics]="result!.metrics!"
+                [config]="lastConfig!">
+              </app-metrics-view>
+            </div>
+          </mat-tab>
+
+          <mat-tab *ngIf="lastConfig && lastConfig.max_people_per_day <= 14">
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">corporate_fare</mat-icon>
+              {{ 'tab.office' | i18n }}
+            </ng-template>
+            <div class="tab-content">
+              <app-office-view
+                [calendar]="result!.calendar!"
+                [config]="lastConfig!">
+              </app-office-view>
+            </div>
+          </mat-tab>
+
+          <mat-tab *ngIf="lastConfig && lastConfig.max_people_per_day <= 14">
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">videogame_asset</mat-icon>
+              {{ 'tab.tactical' | i18n }}
+            </ng-template>
+            <div class="tab-content tab-content--tactical">
+              <app-office-3d-view
+                [calendar]="result!.calendar!"
+                [config]="lastConfig!">
+              </app-office-3d-view>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+      </div>
+
+    </main>
+  </div>
+</div>

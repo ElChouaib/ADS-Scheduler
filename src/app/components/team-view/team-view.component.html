@@ -1,0 +1,49 @@
+<div class="team-view">
+  <table class="team-table" mat-table [dataSource]="rows">
+
+    <!-- Team column -->
+    <ng-container matColumnDef="team">
+      <th mat-header-cell *matHeaderCellDef>Team</th>
+      <td mat-cell *matCellDef="let row">
+        <div class="team-cell">
+          <span class="team-dot" [style.background]="row.team.color"></span>
+          <span class="team-name">{{ row.team.name }}</span>
+          <mat-chip class="size-chip">{{ row.team.size }} people</mat-chip>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Per-week columns -->
+    <ng-container *ngFor="let wk of weekLabels; let i = index" [matColumnDef]="'week_' + (i+1)">
+      <th mat-header-cell *matHeaderCellDef>{{ wk }}</th>
+      <td mat-cell *matCellDef="let row">
+        <div class="pattern-cell"
+             [class.bad-shift]="row.badShiftWeeks.includes(i + 1)"
+             [style.border-color]="row.team.color + '88'"
+             [style.background]="row.team.color + '11'">
+          <mat-icon *ngIf="row.badShiftWeeks.includes(i + 1)" class="bad-icon">warning_amber</mat-icon>
+          <span class="day-tags">
+            <span *ngFor="let day of (row.weekPatterns[i] || '').split(' + ')"
+                  class="day-tag" [style.color]="row.team.color">
+              {{ day.slice(0, 3) }}
+            </span>
+          </span>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Bad shifts column -->
+    <ng-container matColumnDef="badShifts">
+      <th mat-header-cell *matHeaderCellDef>Bad shifts</th>
+      <td mat-cell *matCellDef="let row">
+        <span *ngIf="row.badShiftWeeks.length === 0" class="none-badge">None</span>
+        <mat-chip *ngIf="row.badShiftWeeks.length > 0" color="warn" highlighted>
+          Wk {{ row.badShiftWeeks.join(', ') }}
+        </mat-chip>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</div>

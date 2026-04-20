@@ -1,0 +1,115 @@
+<div class="calendar">
+
+  <!-- Week tabs strip -->
+  <div class="week-tabs">
+    <button *ngFor="let week of weeks; let i = index"
+            type="button"
+            class="week-tab"
+            [class.active]="activeWeek === i"
+            [style.--accent]="weekColor(i)"
+            (click)="activeWeek = i">
+      <span class="week-tab-num">{{ i + 1 }}</span>
+      <span class="week-tab-label">{{ week.label }}</span>
+    </button>
+  </div>
+
+  <!-- Active week card -->
+  <ng-container *ngFor="let week of weeks; let i = index; trackBy: trackByLabel">
+    <div *ngIf="activeWeek === i" class="week-card" [style.--accent]="weekColor(i)">
+
+      <!-- Week card header -->
+      <div class="week-card-header">
+        <div class="week-badge" [style.background]="weekColor(i)">
+          W{{ week.index + 1 }}
+        </div>
+        <div class="week-header-info">
+          <span class="week-card-title">{{ week.label }}</span>
+          <span class="week-subtitle">
+            {{ config.office_days.length }}
+            {{ config.office_days.length !== 1 ? ('cal.office_days_pl' | i18n) : ('cal.office_days' | i18n) }}
+            &nbsp;·&nbsp;
+            {{ week.totalPeople }} {{ 'cal.people' | i18n }}
+          </span>
+        </div>
+
+        <!-- Day load pills summary -->
+        <div class="week-day-pills">
+          <div *ngFor="let cell of week.cells" class="day-pill"
+               [class]="cell.isOfficeDay ? 'load-' + getLoadClass(cell.loadPct) : 'load-off'"
+               [matTooltip]="i18n.day(cell.day) + (cell.isOfficeDay ? (' · ' + cell.total + ' / ' + config.max_people_per_day + ' people') : ' · closed')">
+            <span class="pill-day">{{ i18n.dayShort(cell.day) }}</span>
+            <span class="pill-load">
+              <mat-icon *ngIf="cell.isOfficeDay">person</mat-icon>
+              {{ cell.isOfficeDay ? cell.total : '–' }}
+            </span>
+            <div class="pill-bar" *ngIf="cell.isOfficeDay">
+              <div class="pill-bar-fill" [style.width.%]="cell.loadPct"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Days grid -->
+      <div class="days-scroll">
+      <div class="days-grid" [style.--num-days]="5">
+        <div *ngFor="let cell of week.cells; trackBy: trackByDay"
+             class="day-col"
+             [class.empty-day-col]="cell.isEmpty && cell.isOfficeDay"
+             [class.non-office-day]="!cell.isOfficeDay">
+
+          <!-- Day header -->
+          <div class="day-header">
+            <span class="day-name">{{ i18n.day(cell.day) }}</span>
+            <span class="day-name-short">{{ i18n.dayShort(cell.day) }}</span>
+            <div class="day-capacity" *ngIf="cell.isOfficeDay">
+              <span class="day-capacity-count" [class]="getLoadClass(cell.loadPct)">
+                <mat-icon>person</mat-icon>{{ cell.total }}
+              </span>
+              <div class="day-capacity-bar">
+                <div class="day-capacity-fill"
+                     [class]="getLoadClass(cell.loadPct)"
+                     [style.width.%]="cell.loadPct"></div>
+              </div>
+              <span class="day-capacity-max">{{ config.max_people_per_day }}</span>
+            </div>
+            <div class="day-capacity" *ngIf="!cell.isOfficeDay">
+              <span class="day-capacity-off">—</span>
+            </div>
+          </div>
+
+          <!-- Team list -->
+          <div class="team-list">
+            <ng-container *ngIf="!cell.isEmpty; else emptyTpl">
+              <div *ngFor="let team of cell.teams; trackBy: trackByName"
+                   class="team-item"
+                   [style.--tc]="team.color">
+                <div class="team-avatar" [style.background]="team.color + '20'" [style.color]="team.color">
+                  {{ team.name.slice(0, 1).toUpperCase() }}
+                </div>
+                <div class="team-info">
+                  <span class="team-name">{{ team.name }}</span>
+                  <span class="team-size-label">{{ team.size }} {{ 'cfg.team.people' | i18n }}</span>
+                </div>
+                <div class="team-count-badge" [style.background]="team.color + '18'" [style.color]="team.color">
+                  {{ team.size }}
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #emptyTpl>
+              <div class="no-teams">
+                <mat-icon>{{ cell.isOfficeDay ? 'event_busy' : 'do_not_disturb' }}</mat-icon>
+                <span>{{ cell.isOfficeDay ? ('cal.no_teams' | i18n) : '–' }}</span>
+              </div>
+            </ng-template>
+          </div>
+
+
+        </div>
+      </div><!-- /days-grid -->
+      </div><!-- /days-scroll -->
+
+    </div>
+  </ng-container>
+
+</div>

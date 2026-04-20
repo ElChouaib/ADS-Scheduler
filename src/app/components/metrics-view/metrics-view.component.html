@@ -1,0 +1,155 @@
+<div class="metrics-grid">
+
+  <!-- ── Summary cards ──────────────────────────────── -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: var(--primary-light)">
+        <mat-icon style="color: var(--primary)">people</mat-icon>
+      </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ metrics.total_people }}</div>
+        <div class="stat-label">Total people</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #e8f5e9">
+        <mat-icon style="color: var(--success)">event_available</mat-icon>
+      </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ config.office_days.length }}</div>
+        <div class="stat-label">Office days / week</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fff3e0">
+        <mat-icon style="color: var(--accent)">person</mat-icon>
+      </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ config.days_per_person_per_week }}</div>
+        <div class="stat-label">Days / person / week</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fce4ec">
+        <mat-icon style="color: #e91e63">work</mat-icon>
+      </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ metrics.required_capacity }}</div>
+        <div class="stat-label">Required capacity</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #e3f2fd">
+        <mat-icon style="color: #1976d2">domain</mat-icon>
+      </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ metrics.available_capacity }}</div>
+        <div class="stat-label">Available capacity</div>
+      </div>
+    </div>
+
+    <div class="stat-card" [class.over-util]="utilizationPct > 100">
+      <div class="stat-icon" style="background: #f3e5f5">
+        <mat-icon style="color: #7b1fa2">percent</mat-icon>
+      </div>
+      <div class="stat-body">
+        <div class="stat-value">{{ utilizationPct }}%</div>
+        <div class="stat-label">Utilization</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Per-week capacity breakdown ───────────────────── -->
+  <div class="panel">
+    <h4 class="panel-title">
+      <mat-icon>event_available</mat-icon> Daily Capacity — Per Week
+    </h4>
+    <div class="cap-table-scroll">
+      <table class="cap-table">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th *ngFor="let wk of weekKeys">{{ wk }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let bar of dayBars">
+            <td class="day-cell-name">{{ bar.day }}</td>
+            <td *ngFor="let wk of weekKeys" class="cap-cell">
+              <div class="cap-cell-inner">
+                <div class="cap-mini-bar">
+                  <div class="cap-mini-fill"
+                       [class]="getWeekDayClass(wk, bar.day)"
+                       [style.width.%]="getWeekDayPct(wk, bar.day)">
+                  </div>
+                </div>
+                <span class="cap-val" [class]="getWeekDayClass(wk, bar.day)">
+                  {{ metrics.daily_totals[wk]?.[bar.day] ?? 0 }}
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Average daily load ────────────────────────────── -->
+  <div class="panel">
+    <h4 class="panel-title">
+      <mat-icon>bar_chart</mat-icon> Average Daily Load (across all weeks)
+    </h4>
+    <div class="bar-list">
+      <div *ngFor="let bar of dayBars" class="bar-row">
+        <span class="bar-label">{{ bar.day }}</span>
+        <div class="bar-track">
+          <div class="bar-fill" [style.width.%]="bar.pct" [class]="'bar-' + bar.status"></div>
+        </div>
+        <span class="bar-value" [class]="'txt-' + bar.status">
+          {{ bar.avgLoad }} avg / {{ bar.capacity }} cap
+          <span class="bar-peak" *ngIf="bar.maxLoad !== bar.avgLoad">(peak {{ bar.maxLoad }})</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Base patterns & bad shifts ────────────────────── -->
+  <div class="two-col">
+    <div class="panel">
+      <h4 class="panel-title">
+        <mat-icon>pattern</mat-icon> Base Patterns (Week 1)
+      </h4>
+      <div class="pattern-list">
+        <div *ngFor="let row of patternRows" class="pattern-row">
+          <span class="team-dot" [style.background]="row.color"></span>
+          <span class="pattern-team">{{ row.team }}</span>
+          <span class="pattern-days" [style.color]="row.color">{{ row.pattern }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4 class="panel-title">
+        <mat-icon>warning_amber</mat-icon> Bad Shift Distribution
+      </h4>
+      <div *ngIf="badShiftEntries.length === 0" class="no-bad">
+        <mat-icon style="color: var(--success)">check_circle</mat-icon>
+        No bad shifts assigned
+      </div>
+      <div *ngFor="let entry of badShiftEntries" class="bad-entry">
+        <div class="bad-pattern-label">{{ entry.pattern }}</div>
+        <div class="bad-teams">
+          <div *ngFor="let name of entry.teams" class="bad-team">
+            <span class="team-dot" [style.background]="getTeamColor(name)"></span>
+            {{ name }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

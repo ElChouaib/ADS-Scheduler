@@ -1,0 +1,208 @@
+<div class="cs-shell" [class.is-scanning]="scanning">
+
+  <!-- Overlay FX -->
+  <div class="fx-scanlines"></div>
+  <div class="fx-vignette"></div>
+  <div class="fx-sweep" [class.active]="scanning"></div>
+
+  <!-- ── HUD Bar ────────────────────────────────────────── -->
+  <div class="hud">
+    <div class="hud-brand">
+      <div class="hud-crosshair">⊕</div>
+      <div class="hud-title-block">
+        <div class="hud-title">TACTICAL OFFICE</div>
+        <div class="hud-sub">SHIFT SCHEDULER · RECON MODE</div>
+      </div>
+    </div>
+
+    <div class="hud-ops">
+      <div class="hud-group">
+        <div class="hud-group-label">WEEK</div>
+        <div class="cs-btn-group">
+          <button *ngFor="let wk of weekKeys; let i = index"
+                  class="cs-btn" [class.active]="selectedWeek === i"
+                  type="button" (click)="selectWeek(i)">W{{ i + 1 }}</button>
+        </div>
+      </div>
+      <div class="hud-group">
+        <div class="hud-group-label">DAY</div>
+        <div class="cs-btn-group">
+          <button *ngFor="let day of daysToday"
+                  class="cs-btn cs-day-btn" [class.active]="selectedDay === day"
+                  type="button" (click)="selectDay(day)">
+            {{ day.slice(0, 3).toUpperCase() }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-status" [class]="'lvl-' + threatClass">
+      <div class="status-ring">
+        <svg viewBox="0 0 44 44" class="ring-svg">
+          <circle cx="22" cy="22" r="18" class="ring-track"/>
+          <circle cx="22" cy="22" r="18" class="ring-fill"
+                  [style.stroke-dasharray]="(capacityPct / 100 * 113.1) + ' 113.1'"/>
+        </svg>
+        <div class="ring-center">{{ capacityPct }}<span class="ring-unit">%</span></div>
+      </div>
+      <div class="status-details">
+        <div class="status-num">
+          {{ totalOnDay }}<span class="status-denom">/{{ config.max_people_per_day }}</span>
+        </div>
+        <div class="status-threat-label">{{ threatLevel }}</div>
+        <div class="status-bar-wrap">
+          <div class="status-bar-fill" [style.width.%]="capacityPct"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Layout ────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- 3D Scene Frame -->
+    <div class="scene-frame">
+      <div class="bracket tl"></div>
+      <div class="bracket tr"></div>
+      <div class="bracket bl"></div>
+      <div class="bracket br"></div>
+      <div class="frame-label fl">{{ selectedDay | uppercase }} · WEEK {{ selectedWeek + 1 }}</div>
+      <div class="frame-label fr">{{ missionActive ? 'ACTIVE' : 'STANDBY' }}</div>
+
+      <div class="scene">
+        <div class="world" [class.active]="missionActive" [attr.data-key]="renderKey">
+
+          <!-- Floor surface grid -->
+          <div class="floor-surface"></div>
+
+          <div class="office-layout">
+
+            <!-- ZONE A -->
+            <div class="zone zone-a" [class.has-agents]="zoneAHasAgents">
+              <div class="zone-badge">A</div>
+              <div class="z-grid g2">
+                <div *ngFor="let s of zoneASlots" class="dslot">
+                  <div class="desk" [class.lit]="!!s" [style.--tc]="s?.teamColor || '#112211'">
+                    <div class="desk-surface">
+                      <div class="mon" *ngIf="s"><div class="mon-screen"></div></div>
+                      <div class="keyboard" *ngIf="s"></div>
+                    </div>
+                    <div class="desk-front-face"></div>
+                    <div class="desk-side-face"></div>
+                  </div>
+                  <div class="agent" *ngIf="s"
+                       [style.--tc]="s.teamColor"
+                       [style.--delay]="s.animDelay + 'ms'">
+                    <div class="agent-shadow"></div>
+                    <div class="agent-body">
+                      <div class="agent-ring"></div>
+                      <span class="agent-init">{{ s.initial }}</span>
+                    </div>
+                    <div class="agent-name">{{ s.teamName }}</div>
+                    <div class="agent-ping"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Partition Wall -->
+            <div class="partition">
+              <div class="part-core">
+                <div class="part-bolt"></div>
+                <div class="part-bolt"></div>
+                <div class="part-bolt"></div>
+              </div>
+            </div>
+
+            <!-- ZONE B -->
+            <div class="zone zone-b" [class.has-agents]="zoneBHasAgents">
+              <div class="zone-badge">B</div>
+              <div class="z-rows">
+                <div *ngFor="let row of zoneBRows"
+                     class="z-grid zone-b-row" [style.--cols]="zoneBCols">
+                  <div *ngFor="let s of row" class="dslot">
+                    <div class="desk" [class.lit]="!!s" [style.--tc]="s?.teamColor || '#112211'">
+                      <div class="desk-surface">
+                        <div class="mon" *ngIf="s"><div class="mon-screen"></div></div>
+                        <div class="keyboard" *ngIf="s"></div>
+                      </div>
+                      <div class="desk-front-face"></div>
+                      <div class="desk-side-face"></div>
+                    </div>
+                    <div class="agent" *ngIf="s"
+                         [style.--tc]="s.teamColor"
+                         [style.--delay]="s.animDelay + 'ms'">
+                      <div class="agent-shadow"></div>
+                      <div class="agent-body">
+                        <div class="agent-ring"></div>
+                        <span class="agent-init">{{ s.initial }}</span>
+                      </div>
+                      <div class="agent-name">{{ s.teamName }}</div>
+                      <div class="agent-ping"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /office-layout -->
+
+          <!-- Entry Point -->
+          <div class="entry-pt">
+            <div class="entry-arrows">
+              <span>▲</span><span>▲</span><span>▲</span>
+            </div>
+            <span class="entry-label">ENTRY</span>
+          </div>
+
+        </div><!-- /world -->
+      </div><!-- /scene -->
+    </div><!-- /scene-frame -->
+
+    <!-- ── Roster Panel ──────────────────────────────────── -->
+    <div class="roster">
+      <div class="roster-hdr">
+        <span class="roster-icon">◈</span>
+        <span>AGENTS</span>
+        <div class="roster-badge">{{ teamsToday.length }}</div>
+      </div>
+
+      <div class="roster-body">
+        <ng-container *ngIf="teamsToday.length; else noAgents">
+          <div *ngFor="let t of teamsToday" class="agent-row" [style.--tc]="t.color">
+            <div class="ar-avatar">{{ t.initial }}</div>
+            <div class="ar-info">
+              <div class="ar-name">{{ t.name }}</div>
+              <div class="ar-bar">
+                <div class="ar-fill" [style.width.%]="(t.count / totalOnDay) * 100"></div>
+              </div>
+            </div>
+            <div class="ar-num">{{ t.count }}</div>
+          </div>
+        </ng-container>
+        <ng-template #noAgents>
+          <div class="no-agents">
+            <div class="no-agents-icon">⊘</div>
+            <div>NO AGENTS<br>DEPLOYED</div>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="roster-foot">
+        <div class="foot-row">
+          <span>DEPLOYED</span>
+          <span class="foot-val" [class]="'lvl-' + threatClass">{{ totalOnDay }}</span>
+        </div>
+        <div class="foot-row">
+          <span>CAPACITY</span>
+          <span class="foot-val">{{ config.max_people_per_day }}</span>
+        </div>
+        <div class="foot-row">
+          <span>LOAD</span>
+          <span class="foot-val" [class]="'lvl-' + threatClass">{{ capacityPct }}%</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div>

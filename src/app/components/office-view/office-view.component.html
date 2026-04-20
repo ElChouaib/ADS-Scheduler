@@ -1,0 +1,108 @@
+<div class="office-view">
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="week-tabs">
+      <button *ngFor="let wk of weekKeys; let i = index"
+              class="week-tab" [class.active]="selectedWeek === i"
+              (click)="selectWeek(i)">
+        <span class="wk-num">{{ i + 1 }}</span>
+        <span class="wk-lbl">WK</span>
+      </button>
+    </div>
+    <div class="day-pills">
+      <button *ngFor="let day of daysToday"
+              class="day-pill" [class.active]="selectedDay === day"
+              (click)="selectDay(day)">
+        {{ day.slice(0, 3) }}
+      </button>
+    </div>
+    <div class="occ-badge" [class.full]="isFull" [class.empty]="totalOnDay === 0">
+      <mat-icon>people</mat-icon>
+      <span>{{ totalOnDay }} / {{ config.max_people_per_day }}</span>
+      <span class="occ-pct">{{ capacityPct }}%</span>
+    </div>
+  </div>
+
+  <!-- Floor plan -->
+  <div class="floor-wrap">
+    <div class="floor-plan">
+
+      <!-- Entry label -->
+      <div class="entry">
+        <mat-icon>sensor_door</mat-icon>
+        <span>Entry</span>
+      </div>
+
+      <!-- Zone A: 2 cols × 2 rows -->
+      <div class="zone zone-a">
+        <div class="zone-badge">A</div>
+        <div class="desk-row">
+          <ng-container *ngFor="let desk of zoneARow1">
+            <ng-container *ngTemplateOutlet="deskTpl; context: { desk: desk }"></ng-container>
+          </ng-container>
+        </div>
+        <div class="pod-back"></div>
+        <div class="desk-row flipped">
+          <ng-container *ngFor="let desk of zoneARow2">
+            <ng-container *ngTemplateOutlet="deskTpl; context: { desk: desk }"></ng-container>
+          </ng-container>
+        </div>
+        <div class="zone-label">Zone A</div>
+      </div>
+
+      <!-- Partition wall -->
+      <div class="partition">
+        <div class="partition-knob top"></div>
+        <div class="partition-knob bot"></div>
+      </div>
+
+      <!-- Zone B: dynamic cols × 2 rows (always exactly 2 rows) -->
+      <div class="zone zone-b">
+        <div class="zone-badge">B</div>
+        <div class="desk-row">
+          <ng-container *ngFor="let desk of zoneBRow1">
+            <ng-container *ngTemplateOutlet="deskTpl; context: { desk: desk }"></ng-container>
+          </ng-container>
+        </div>
+        <div class="pod-back"></div>
+        <div class="desk-row flipped">
+          <ng-container *ngFor="let desk of zoneBRow2">
+            <ng-container *ngTemplateOutlet="deskTpl; context: { desk: desk }"></ng-container>
+          </ng-container>
+        </div>
+        <div class="zone-label">Zone B</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <ng-container *ngIf="teamsToday.length; else noTeams">
+      <div *ngFor="let t of teamsToday" class="legend-item">
+        <div class="legend-swatch" [style.background]="t.color">{{ t.initial }}</div>
+        <span class="legend-name">{{ t.name }}</span>
+        <span class="legend-count">{{ t.count }}</span>
+      </div>
+    </ng-container>
+    <ng-template #noTeams>
+      <span class="no-teams">No teams in office on {{ selectedDay }} this week</span>
+    </ng-template>
+  </div>
+
+</div>
+
+<!-- Desk template -->
+<ng-template #deskTpl let-desk="desk">
+  <div class="desk" [class.occupied]="desk.occupied"
+       [style.--tc]="desk.teamColor ?? '#888'"
+       [matTooltip]="desk.occupied ? (desk.teamName + ' team') : 'Empty'"
+       matTooltipShowDelay="300">
+    <div class="desk-surface">
+      <div class="monitor-bump"></div>
+      <div class="avatar" *ngIf="desk.occupied">{{ desk.initial }}</div>
+      <div class="empty-seat" *ngIf="!desk.occupied"></div>
+    </div>
+  </div>
+</ng-template>

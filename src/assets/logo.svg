@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" fill="none">
+  <!-- Background pill -->
+  <rect width="44" height="44" rx="12" fill="#3949AB"/>
+
+  <!-- Shift grid: 3 cols × 3 rows of rounded cells -->
+  <!-- Row 1 -->
+  <rect x="6"  y="7"  width="9" height="6" rx="2" fill="white" opacity="0.95"/>
+  <rect x="18" y="7"  width="9" height="6" rx="2" fill="white" opacity="0.95"/>
+  <rect x="30" y="7"  width="8" height="6" rx="2" fill="white" opacity="0.30"/>
+
+  <!-- Row 2 -->
+  <rect x="6"  y="16" width="9" height="6" rx="2" fill="white" opacity="0.30"/>
+  <rect x="18" y="16" width="9" height="6" rx="2" fill="#F5A623"/>
+  <rect x="30" y="16" width="8" height="6" rx="2" fill="#F5A623"/>
+
+  <!-- Row 3 -->
+  <rect x="6"  y="25" width="9" height="6" rx="2" fill="#2ECC71"/>
+  <rect x="18" y="25" width="9" height="6" rx="2" fill="white" opacity="0.30"/>
+  <rect x="30" y="25" width="8" height="6" rx="2" fill="#2ECC71"/>
+
+  <!-- ADS label strip -->
+  <rect x="6" y="34" width="32" height="4" rx="2" fill="white" opacity="0.20"/>
+  <text x="22" y="37.5" font-family="Inter, sans-serif" font-size="4" font-weight="800"
+        fill="white" text-anchor="middle" letter-spacing="1">ADS</text>
+</svg>
