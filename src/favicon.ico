@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background -->
+  <rect width="32" height="32" rx="9" fill="#0f172a"/>
+
+  <!-- Baseline -->
+  <rect x="3" y="26" width="26" height="2" rx="1" fill="white" opacity="0.12"/>
+
+  <!-- Day bars (Mon–Fri), varying heights = team load -->
+  <rect x="3"  y="8"  width="4" height="18" rx="2" fill="#4A90D9"/>
+  <rect x="8"  y="13" width="4" height="13" rx="2" fill="#2ECC71"/>
+  <rect x="13" y="6"  width="4" height="20" rx="2" fill="#F5A623"/>
+  <rect x="18" y="11" width="4" height="15" rx="2" fill="#9B59B6"/>
+  <rect x="23" y="9"  width="4" height="17" rx="2" fill="#E74C3C"/>
+
+  <!-- Sparkle dot on tallest bar -->
+  <circle cx="15" cy="4.5" r="1.8" fill="#F5A623" opacity="0.9"/>
+</svg>
