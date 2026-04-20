@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { SchedulerConfig, SchedulerResult } from './models/scheduler.models';
+import { CalendarSchedule, SchedulerConfig, SchedulerResult } from './models/scheduler.models';
 import { SchedulerService } from './services/scheduler.service';
 import { I18nService, Lang } from './services/i18n.service';
 
@@ -58,6 +58,11 @@ export class AppComponent {
     return ['team', ...this.weekLabels.map((_, i) => `week_${i + 1}`), 'badShifts'];
   }
 
+
+  onCalendarChange(calendar: CalendarSchedule): void {
+    if (!this.result || !this.lastConfig) return;
+    this.result = this.scheduler.recomputeFromCalendar(calendar, this.lastConfig, this.result);
+  }
 
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;

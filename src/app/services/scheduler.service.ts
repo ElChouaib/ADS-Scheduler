@@ -488,6 +488,71 @@ export class SchedulerService {
     return `Could not find a valid ${config.meeting_constraint.frequency} rotation satisfying all overlap constraints across ${config.num_weeks} weeks.`;
   }
 
+  // ── Recompute from manually edited calendar ────────────────────────────────
+
+  recomputeFromCalendar(calendar: CalendarSchedule, config: SchedulerConfig, existingResult: SchedulerResult): SchedulerResult {
+    const teamSchedule: TeamSchedule = {};
+    const dailyTotals: Record<string, DayTotals> = {};
+    const totalBadCount: Record<string, number> = {};
+    const badShiftDist: BadShiftDistribution = {};
+
+    for (const [weekLabel, dayMap] of Object.entries(calendar)) {
+      teamSchedule[weekLabel] = {};
+      dailyTotals[weekLabel] = {};
+      for (const t of config.teams) teamSchedule[weekLabel][t.name] = [];
+
+      for (const [day, teamNames] of Object.entries(dayMap)) {
+        dailyTotals[weekLabel][day] = 0;
+        for (const teamName of teamNames) {
+          const team = config.teams.find(t => t.name === teamName);
+          if (!team) continue;
+          teamSchedule[weekLabel][teamName].push(day);
+          dailyTotals[weekLabel][day] = (dailyTotals[weekLabel][day] ?? 0) + team.size;
+        }
+      }
+
+      for (const [teamName, days] of Object.entries(teamSchedule[weekLabel])) {
+        if (this.isBadPattern(days, config.constraints.avoid_day_pairs)) {
+          totalBadCount[teamName] = (totalBadCount[teamName] ?? 0) + 1;
+        }
+      }
+    }
+
+    for (const [teamName, count] of Object.entries(totalBadCount)) {
+      if (count > 0) {
+        const firstWeek = Object.keys(teamSchedule)[0];
+        const days = teamSchedule[firstWeek]?.[teamName] ?? [];
+        const key = config.constraints.avoid_day_pairs.find(p => this.isBadPattern(days, [p])) ?? 'bad';
+        if (!badShiftDist[key]) badShiftDist[key] = [];
+        if (!badShiftDist[key].includes(teamName)) badShiftDist[key].push(teamName);
+      }
+    }
+
+    const firstWeekLabel = Object.keys(teamSchedule)[0];
+    const patternDistribution: Record<string, string> = {};
+    for (const [name, days] of Object.entries(teamSchedule[firstWeekLabel] ?? {})) {
+      patternDistribution[name] = days.join(' + ');
+    }
+
+    const totalPeople = config.teams.reduce((s, t) => s + t.size, 0);
+    const metrics: SchedulerMetrics = {
+      daily_totals: dailyTotals,
+      bad_shift_distribution: badShiftDist,
+      pattern_distribution: patternDistribution,
+      total_people: totalPeople,
+      required_capacity: totalPeople * config.days_per_person_per_week,
+      available_capacity: config.office_days.length * config.max_people_per_day,
+    };
+
+    return {
+      ...existingResult,
+      status: 'SUCCESS',
+      calendar,
+      team_schedule: teamSchedule,
+      metrics,
+    };
+  }
+
   // ── Utilities (public for use in components) ───────────────────────────────
 
   getPatternLabel(days: string[]): string {

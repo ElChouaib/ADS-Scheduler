@@ -2,7 +2,7 @@
 
   <!-- Week tabs strip -->
   <div class="week-tabs">
-    <button *ngFor="let week of weeks; let i = index"
+    <button *ngFor="let week of editWeeks; let i = index"
             type="button"
             class="week-tab"
             [class.active]="activeWeek === i"
@@ -11,17 +11,24 @@
       <span class="week-tab-num">{{ i + 1 }}</span>
       <span class="week-tab-label">{{ week.label }}</span>
     </button>
+
+    <!-- Manual override banner -->
+    <div class="modified-badge" *ngIf="isModified">
+      <mat-icon>edit</mat-icon>
+      <span>Manual override</span>
+      <button class="reset-btn" type="button" (click)="reset()">
+        <mat-icon>restart_alt</mat-icon> Reset
+      </button>
+    </div>
   </div>
 
   <!-- Active week card -->
-  <ng-container *ngFor="let week of weeks; let i = index; trackBy: trackByLabel">
+  <ng-container *ngFor="let week of editWeeks; let i = index; trackBy: trackByLabel">
     <div *ngIf="activeWeek === i" class="week-card" [style.--accent]="weekColor(i)">
 
       <!-- Week card header -->
       <div class="week-card-header">
-        <div class="week-badge" [style.background]="weekColor(i)">
-          W{{ week.index + 1 }}
-        </div>
+        <div class="week-badge" [style.background]="weekColor(i)">W{{ week.index + 1 }}</div>
         <div class="week-header-info">
           <span class="week-card-title">{{ week.label }}</span>
           <span class="week-subtitle">
@@ -32,7 +39,7 @@
           </span>
         </div>
 
-        <!-- Day load pills summary -->
+        <!-- Day load pills -->
         <div class="week-day-pills">
           <div *ngFor="let cell of week.cells" class="day-pill"
                [class]="cell.isOfficeDay ? 'load-' + getLoadClass(cell.loadPct) : 'load-off'"
@@ -51,65 +58,117 @@
 
       <!-- Days grid -->
       <div class="days-scroll">
-      <div class="days-grid" [style.--num-days]="5">
-        <div *ngFor="let cell of week.cells; trackBy: trackByDay"
-             class="day-col"
-             [class.empty-day-col]="cell.isEmpty && cell.isOfficeDay"
-             [class.non-office-day]="!cell.isOfficeDay">
+        <div class="days-grid" [style.--num-days]="5">
+          <div *ngFor="let cell of week.cells; let j = index; trackBy: trackByDay"
+               class="day-col"
+               [class.empty-day-col]="cell.isEmpty && cell.isOfficeDay"
+               [class.non-office-day]="!cell.isOfficeDay"
+               [class.over-capacity]="cell.overCapacity"
+               [id]="dropListId(i, j)"
+               cdkDropList
+               [cdkDropListData]="cell.teams"
+               [cdkDropListConnectedTo]="connectedTo(i, j)"
+               [cdkDropListDisabled]="!cell.isOfficeDay"
+               (cdkDropListDropped)="onDrop($event, i)">
 
-          <!-- Day header -->
-          <div class="day-header">
-            <span class="day-name">{{ i18n.day(cell.day) }}</span>
-            <span class="day-name-short">{{ i18n.dayShort(cell.day) }}</span>
-            <div class="day-capacity" *ngIf="cell.isOfficeDay">
-              <span class="day-capacity-count" [class]="getLoadClass(cell.loadPct)">
-                <mat-icon>person</mat-icon>{{ cell.total }}
-              </span>
-              <div class="day-capacity-bar">
-                <div class="day-capacity-fill"
-                     [class]="getLoadClass(cell.loadPct)"
-                     [style.width.%]="cell.loadPct"></div>
+            <!-- Day header -->
+            <div class="day-header">
+              <span class="day-name">{{ i18n.day(cell.day) }}</span>
+              <span class="day-name-short">{{ i18n.dayShort(cell.day) }}</span>
+              <div class="day-capacity" *ngIf="cell.isOfficeDay">
+                <span class="day-capacity-count" [class]="getLoadClass(cell.loadPct)">
+                  <mat-icon>person</mat-icon>{{ cell.total }}
+                </span>
+                <div class="day-capacity-bar">
+                  <div class="day-capacity-fill"
+                       [class]="getLoadClass(cell.loadPct)"
+                       [style.width.%]="cell.loadPct"></div>
+                </div>
+                <span class="day-capacity-max">{{ config.max_people_per_day }}</span>
               </div>
-              <span class="day-capacity-max">{{ config.max_people_per_day }}</span>
+              <div class="day-capacity" *ngIf="!cell.isOfficeDay">
+                <span class="day-capacity-off">—</span>
+              </div>
             </div>
-            <div class="day-capacity" *ngIf="!cell.isOfficeDay">
-              <span class="day-capacity-off">—</span>
+
+            <!-- Team list -->
+            <div class="team-list">
+              <ng-container *ngIf="!cell.isEmpty || !cell.isOfficeDay; else emptyTpl">
+                <div *ngFor="let team of cell.teams; trackBy: trackByName"
+                     class="team-item"
+                     [style.--tc]="team.color"
+                     cdkDrag
+                     [cdkDragData]="team">
+
+                  <!-- Drag preview -->
+                  <div class="drag-preview" *cdkDragPreview>
+                    <div class="team-avatar" [style.background]="team.color + '30'" [style.color]="team.color">
+                      {{ team.name.slice(0,1).toUpperCase() }}
+                    </div>
+                    <span class="team-name">{{ team.name }}</span>
+                  </div>
+
+                  <!-- Drag placeholder -->
+                  <div class="drag-placeholder" *cdkDragPlaceholder></div>
+
+                  <div class="team-avatar" [style.background]="team.color + '20'" [style.color]="team.color">
+                    {{ team.name.slice(0, 1).toUpperCase() }}
+                  </div>
+                  <div class="team-info">
+                    <span class="team-name">{{ team.name }}</span>
+                    <span class="team-size-label">{{ team.size }} {{ 'cfg.team.people' | i18n }}</span>
+                  </div>
+                  <div class="team-count-badge" [style.background]="team.color + '18'" [style.color]="team.color">
+                    {{ team.size }}
+                  </div>
+                  <mat-icon class="drag-handle">drag_indicator</mat-icon>
+                </div>
+              </ng-container>
+
+              <ng-template #emptyTpl>
+                <div class="no-teams">
+                  <mat-icon>{{ cell.isOfficeDay ? 'event_busy' : 'do_not_disturb' }}</mat-icon>
+                  <span>{{ cell.isOfficeDay ? ('cal.no_teams' | i18n) : '–' }}</span>
+                </div>
+              </ng-template>
             </div>
+
           </div>
-
-          <!-- Team list -->
-          <div class="team-list">
-            <ng-container *ngIf="!cell.isEmpty; else emptyTpl">
-              <div *ngFor="let team of cell.teams; trackBy: trackByName"
-                   class="team-item"
-                   [style.--tc]="team.color">
-                <div class="team-avatar" [style.background]="team.color + '20'" [style.color]="team.color">
-                  {{ team.name.slice(0, 1).toUpperCase() }}
-                </div>
-                <div class="team-info">
-                  <span class="team-name">{{ team.name }}</span>
-                  <span class="team-size-label">{{ team.size }} {{ 'cfg.team.people' | i18n }}</span>
-                </div>
-                <div class="team-count-badge" [style.background]="team.color + '18'" [style.color]="team.color">
-                  {{ team.size }}
-                </div>
-              </div>
-            </ng-container>
-
-            <ng-template #emptyTpl>
-              <div class="no-teams">
-                <mat-icon>{{ cell.isOfficeDay ? 'event_busy' : 'do_not_disturb' }}</mat-icon>
-                <span>{{ cell.isOfficeDay ? ('cal.no_teams' | i18n) : '–' }}</span>
-              </div>
-            </ng-template>
-          </div>
-
-
         </div>
-      </div><!-- /days-grid -->
-      </div><!-- /days-scroll -->
+      </div>
 
     </div>
   </ng-container>
+
+  <!-- ── Violations disclaimer ──────────────────────────────────── -->
+  <div class="violations-panel" *ngIf="isModified && violations.length > 0">
+    <div class="violations-header">
+      <mat-icon class="v-header-icon">report_problem</mat-icon>
+      <span class="v-header-title">Manual schedule violates {{ errorCount + warnCount }} constraint{{ (errorCount + warnCount) !== 1 ? 's' : '' }}</span>
+      <span class="v-counts">
+        <span class="v-count error" *ngIf="errorCount > 0">
+          <mat-icon>cancel</mat-icon>{{ errorCount }} error{{ errorCount !== 1 ? 's' : '' }}
+        </span>
+        <span class="v-count warning" *ngIf="warnCount > 0">
+          <mat-icon>warning_amber</mat-icon>{{ warnCount }} warning{{ warnCount !== 1 ? 's' : '' }}
+        </span>
+      </span>
+    </div>
+    <div class="violations-list">
+      <div *ngFor="let v of violations" class="violation-row" [class.is-error]="v.severity === 'error'" [class.is-warning]="v.severity === 'warning'">
+        <mat-icon class="v-icon">{{ v.icon }}</mat-icon>
+        <div class="v-body">
+          <span class="v-title">{{ v.title }}</span>
+          <span class="v-detail">{{ v.detail }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clean state message when modified but no violations -->
+  <div class="violations-ok" *ngIf="isModified && violations.length === 0">
+    <mat-icon>check_circle</mat-icon>
+    <span>Manual schedule satisfies all constraints.</span>
+  </div>
 
 </div>

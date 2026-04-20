@@ -8,7 +8,51 @@ import {
 } from '../../models/scheduler.models';
 import { I18nService } from '../../services/i18n.service';
 
-const STORAGE_KEY = 'ads_shift_config';
+const STORAGE_KEY = 'ads_v2';
+
+// Day index codec — store days as single chars instead of full names
+const DAY_ENC: Record<string, string> = { Monday:'M', Tuesday:'T', Wednesday:'W', Thursday:'H', Friday:'F' };
+const DAY_DEC: Record<string, string> = Object.fromEntries(Object.entries(DAY_ENC).map(([k,v]) => [v,k]));
+const encDays = (days: string[]) => days.map(d => DAY_ENC[d] ?? d).join('');
+const decDays = (s: string) => s.split('').map(c => DAY_DEC[c] ?? c);
+const encPairs = (pairs: string[]) => pairs.map(p => p.split('+').map(d => DAY_ENC[d] ?? d).join('')).join(',');
+const decPairs = (s: string) => s ? s.split(',').map(p => p.split('').map(c => DAY_DEC[c] ?? c).join('+')).filter(Boolean) : [];
+
+// Compact encode: SchedulerConfig → tiny object
+function encode(c: import('../../models/scheduler.models').SchedulerConfig): object {
+  return {
+    t: c.teams.map(t => [t.name, t.size, t.color ?? '']),
+    d: encDays(c.office_days),
+    w: c.days_per_person_per_week,
+    m: c.max_people_per_day,
+    n: c.num_weeks,
+    f: c.meeting_constraint.frequency[0], // w/b/m
+    a: encPairs(c.constraints.avoid_day_pairs),
+    x: encPairs(c.constraints.forbidden_day_pairs),
+    b: c.constraints.fairness.balance_bad_shifts ? 1 : 0,
+  };
+}
+
+// Compact decode: tiny object → SchedulerConfig
+function decode(o: any): import('../../models/scheduler.models').SchedulerConfig {
+  const freqMap: Record<string, string> = { w: 'weekly', b: 'biweekly', m: 'monthly' };
+  return {
+    teams: (o.t as any[]).map((row: any, i: number) => ({
+      id: String(i + 1), name: row[0], size: row[1], color: row[2] || undefined,
+    })),
+    office_days: decDays(o.d),
+    days_per_person_per_week: o.w,
+    max_people_per_day: o.m,
+    num_weeks: o.n,
+    meeting_constraint: { type: 'direct_overlap', frequency: freqMap[o.f] as any ?? 'monthly' },
+    constraints: {
+      teams_must_stay_together: true,
+      avoid_day_pairs: decPairs(o.a ?? ''),
+      forbidden_day_pairs: decPairs(o.x ?? ''),
+      fairness: { balance_bad_shifts: o.b === 1 },
+    },
+  };
+}
 
 @Component({
   selector: 'app-config-panel',
@@ -191,7 +235,7 @@ export class ConfigPanelComponent implements OnInit {
   saveConfig(): void {
     const cfg = this.buildConfig();
     if (!cfg) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(encode(cfg)));
     this.savedFlash = true;
     setTimeout(() => (this.savedFlash = false), 2000);
   }
@@ -199,7 +243,10 @@ export class ConfigPanelComponent implements OnInit {
   private loadFromStorage(): SchedulerConfig | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as SchedulerConfig) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      // Detect legacy full-key format vs compact format
+      return 'teams' in parsed ? parsed as SchedulerConfig : decode(parsed);
     } catch {
       return null;
     }

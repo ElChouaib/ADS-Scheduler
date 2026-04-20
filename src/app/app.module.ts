@@ -22,6 +22,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
 import { MatBadgeModule } from '@angular/material/badge';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 // App
 import { AppRoutingModule } from './app-routing.module';
@@ -62,6 +63,7 @@ const MATERIAL = [
     FormsModule,
     ReactiveFormsModule,
     AppRoutingModule,
+    DragDropModule,
     ...MATERIAL,
   ],
   providers: [I18nService],

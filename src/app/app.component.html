@@ -111,7 +111,8 @@
             <div class="tab-content">
               <app-calendar-view
                 [calendar]="result!.calendar!"
-                [config]="lastConfig!">
+                [config]="lastConfig!"
+                (calendarChange)="onCalendarChange($event)">
               </app-calendar-view>
             </div>
           </mat-tab>
